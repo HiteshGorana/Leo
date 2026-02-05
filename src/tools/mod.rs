@@ -7,6 +7,11 @@ mod runner;
 mod filesystem;
 mod shell;
 mod web;
+mod search;
+mod edit;
+mod git;
+mod memory;
+mod task;
 
 pub use runner::{ToolRunner, ToolDefinition};
 

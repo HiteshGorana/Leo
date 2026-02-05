@@ -376,18 +376,54 @@ impl LlmClient for GeminiOAuthClient {
         println!("🔗 Calling Code Assist API: {}", url);
         println!("📋 Project: {}, Model: {}", project_id, self.model);
         
-        let response = self.client
-            .post(&url)
-            .header("User-Agent", "google-api-nodejs-client/leo")
-            .header("X-Goog-Api-Client", "gl-node/leo")
-            .bearer_auth(&access_token)
-            .json(&code_assist_request)
-            .send()
-            .await?;
+        let mut retry_count = 0;
+        let max_retries = 5;
+        let mut backoff = std::time::Duration::from_secs(1);
         
-        if !response.status().is_success() {
+        loop {
+            let response = self.client
+                .post(&url)
+                .header("User-Agent", "google-api-nodejs-client/leo")
+                .header("X-Goog-Api-Client", "gl-node/leo")
+                .bearer_auth(&access_token)
+                .json(&code_assist_request)
+                .send()
+                .await?;
+            
+            if response.status().is_success() {
+                // Code Assist API returns { response: { ... standard response ... } }
+                let code_assist_response: Value = response.json().await?;
+                println!("📥 Code Assist response received");
+                
+                // Extract the nested response
+                let inner_response = code_assist_response.get("response")
+                    .ok_or_else(|| Error::Llm("Missing 'response' field in Code Assist response".to_string()))?;
+                
+                // Parse as standard Gemini response
+                let gemini_response: GeminiResponse = serde_json::from_value(inner_response.clone())
+                    .map_err(|e| Error::Llm(format!("Failed to parse response: {}", e)))?;
+                
+                return self.parse_response(&gemini_response);
+            }
+            
             let status = response.status();
             let error_text = response.text().await?;
+            
+            // Check for rate limit (429) or resource exhausted
+            if status.as_u16() == 429 || error_text.contains("RESOURCE_EXHAUSTED") {
+                if retry_count < max_retries {
+                    retry_count += 1;
+                    println!("⚠️ Rate limit exceeded (429). Retrying in {:?} (Ensure quota is sufficient)...", backoff);
+                    
+                    tokio::time::sleep(backoff).await;
+                    
+                    // Exponential backoff with jitter
+                    let jitter = rand::random::<f64>() * 0.5 + 0.5; // 0.5x to 1.0x
+                    let next_backoff = backoff.mul_f64(2.0 * jitter);
+                    backoff = next_backoff.min(std::time::Duration::from_secs(60));
+                    continue;
+                }
+            }
             
             println!("❌ Code Assist API error ({}): {}", status, error_text);
             
@@ -398,20 +434,6 @@ impl LlmClient for GeminiOAuthClient {
             
             return Err(Error::Llm(format!("Code Assist API error ({}): {}", status, error_text)));
         }
-        
-        // Code Assist API returns { response: { ... standard response ... } }
-        let code_assist_response: Value = response.json().await?;
-        println!("📥 Code Assist response received");
-        
-        // Extract the nested response
-        let inner_response = code_assist_response.get("response")
-            .ok_or_else(|| Error::Llm("Missing 'response' field in Code Assist response".to_string()))?;
-        
-        // Parse as standard Gemini response
-        let gemini_response: GeminiResponse = serde_json::from_value(inner_response.clone())
-            .map_err(|e| Error::Llm(format!("Failed to parse response: {}", e)))?;
-        
-        self.parse_response(&gemini_response)
     }
     
     fn default_model(&self) -> &str {

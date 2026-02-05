@@ -8,6 +8,11 @@ use crate::Result;
 use crate::error::Error;
 use super::Tool;
 use super::filesystem::{ReadFileTool, WriteFileTool, ListDirTool};
+use super::edit::EditTool;
+use super::search::SearchTool;
+use super::git::GitTool;
+use super::memory::MemoryTool;
+use super::task::TaskTool;
 use super::shell::ExecTool;
 use super::web::{WebSearchTool, WebFetchTool};
 
@@ -40,9 +45,16 @@ impl ToolRunner {
         runner.register(ReadFileTool);
         runner.register(WriteFileTool);
         runner.register(ListDirTool);
+        runner.register(EditTool);
+        runner.register(SearchTool::new(workspace.clone()));
         
-        // Shell tool
+        // Shell & Git tools
         runner.register(ExecTool::new(workspace.clone()));
+        runner.register(GitTool::new(workspace.clone()));
+        
+        // Memory & Task tools
+        runner.register(MemoryTool::new(workspace.clone()));
+        runner.register(TaskTool::new(workspace.clone()));
         
         // Web tools
         runner.register(WebSearchTool);
