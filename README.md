@@ -23,12 +23,36 @@ Leo is an ultra-lightweight personal AI assistant framework designed to be your 
 
 ### Installation
 
-Clone the repository and build:
+#### Option 1: Pre-built Binaries (Recommended)
+
+Download the latest release for your platform from the [Releases Page](https://github.com/HiteshGorana/Leo/releases).
+
+**macOS / Linux:**
+1. Download the archive for your architecture (`x86_64` or `aarch64`/Apple Silicon).
+2. Extract the binary:
+   ```bash
+   tar xzf leo-*.tar.gz
+   ```
+3. Move it to your path:
+   ```bash
+   sudo mv leo /usr/local/bin/
+   ```
+   *(On macOS, you may need to allow the app in Security settings if unsigned)*
+
+**Windows:**
+1. Download the `.zip` file.
+2. Extract `leo.exe`.
+3. Add the folder to your system `PATH` or run from PowerShell.
+
+#### Option 2: Build from Source
+
+Clone the repository and build (requires Rust):
 
 ```bash
 git clone https://github.com/HiteshGorana/Leo.git
 cd Leo
 cargo build --release
+# Binary will be in target/release/leo
 ```
 
 ### Usage
