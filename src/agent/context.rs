@@ -109,6 +109,7 @@ You have access to tools that allow you to:
 - Read, write, and edit files
 - Execute shell commands
 - Search the web and fetch web pages
+- Control your Chrome browser (click, type, navigate, screenshot)
 
 ## Current Time
 {}

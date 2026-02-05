@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "Leo Link",
+    "version": "1.0",
+    "description": "Connects your browser to Leo (AI Personal Assistant) via WebSocket.",
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "tabs"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_title": "Leo Link needs a click to activate on some pages",
+        "default_popup": "popup.html"
+    },
+    "icons": {
+        "16": "icon.png",
+        "48": "icon.png",
+        "128": "icon.png"
+    }
+}

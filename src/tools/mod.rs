@@ -12,6 +12,7 @@ mod edit;
 mod git;
 mod memory;
 mod task;
+mod browser_bridge;
 
 pub use runner::{ToolRunner, ToolDefinition};
 

@@ -6,13 +6,23 @@ use crate::Result;
 use crate::error::Error;
 use super::Tool;
 
-/// Web search (placeholder - requires API key)
-pub struct WebSearchTool;
+use super::browser_bridge::BrowserBridgeTool;
+
+/// Web search tool - can use browser bridge as a fallback/primary
+pub struct WebSearchTool {
+    pub(crate) browser: Option<BrowserBridgeTool>,
+}
+
+impl WebSearchTool {
+    pub fn new(browser: Option<BrowserBridgeTool>) -> Self {
+        Self { browser }
+    }
+}
 
 #[async_trait]
 impl Tool for WebSearchTool {
     fn name(&self) -> &str { "web_search" }
-    fn description(&self) -> &str { "Search the web for information" }
+    fn description(&self) -> &str { "Search the web for information using the browser or search API" }
     
     fn parameters(&self) -> Value {
         json!({
@@ -21,6 +31,10 @@ impl Tool for WebSearchTool {
                 "query": {
                     "type": "string",
                     "description": "Search query"
+                },
+                "max_length": {
+                    "type": "number",
+                    "description": "Maximum characters to return (default 10000)"
                 }
             },
             "required": ["query"]
@@ -32,23 +46,49 @@ impl Tool for WebSearchTool {
             .and_then(|v| v.as_str())
             .ok_or_else(|| Error::Tool("Missing 'query' parameter".to_string()))?;
         
+        let max_len = params.get("max_length")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(10000) as usize;
+
+        if let Some(browser) = &self.browser {
+            // Use the browser bridge to perform the search
+            let result = browser.execute(json!({
+                "action": "search",
+                "query": query
+            })).await?;
+
+            return Ok(if result.len() > max_len {
+                format!("{}...\n\n[Truncated - {} total chars]", &result[..max_len], result.len())
+            } else {
+                result
+            });
+        }
+
         // Placeholder - in production, use a search API (Brave, Google, etc.)
         Ok(format!(
-            "Web search is not yet configured.\n\
+            "Web search is not yet configured (and no browser connected).\n\
              Query: {}\n\n\
-             To enable web search, configure a search API key in your config.",
+             Please install the Leo Link extension to enable browser-based searching.",
             query
         ))
     }
 }
 
 /// Fetch web page content
-pub struct WebFetchTool;
+pub struct WebFetchTool {
+    pub(crate) browser: Option<BrowserBridgeTool>,
+}
+
+impl WebFetchTool {
+    pub fn new(browser: Option<BrowserBridgeTool>) -> Self {
+        Self { browser }
+    }
+}
 
 #[async_trait]
 impl Tool for WebFetchTool {
     fn name(&self) -> &str { "web_fetch" }
-    fn description(&self) -> &str { "Fetch content from a URL" }
+    fn description(&self) -> &str { "Fetch content from a URL via browser or HTTP" }
     
     fn parameters(&self) -> Value {
         json!({
@@ -68,6 +108,32 @@ impl Tool for WebFetchTool {
             .and_then(|v| v.as_str())
             .ok_or_else(|| Error::Tool("Missing 'url' parameter".to_string()))?;
         
+        let max_len = params.get("max_length")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(10000) as usize;
+
+        if let Some(browser) = &self.browser {
+            // First open the URL
+            browser.execute(json!({
+                "action": "open",
+                "url": url
+            })).await?;
+            
+            // Wait a tiny bit then read
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            
+            let result = browser.execute(json!({
+                "action": "read"
+            })).await?;
+
+            return Ok(if result.len() > max_len {
+                format!("{}...\n\n[Truncated - {} total chars]", &result[..max_len], result.len())
+            } else {
+                result
+            });
+        }
+
+        // Fallback to direct HTTP fetch
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(30))
             .build()
@@ -87,12 +153,11 @@ impl Tool for WebFetchTool {
         let text = response.text().await
             .map_err(|e| Error::Tool(format!("Failed to read response: {}", e)))?;
         
-        // Basic HTML to text conversion (very simplified)
+        // Basic HTML to text conversion
         let clean = html_to_text(&text);
         
-        // Truncate if too long
-        if clean.len() > 10000 {
-            Ok(format!("{}...\n\n[Truncated - {} total chars]", &clean[..10000], clean.len()))
+        if clean.len() > max_len {
+            Ok(format!("{}...\n\n[Truncated - {} total chars]", &clean[..max_len], clean.len()))
         } else {
             Ok(clean)
         }
@@ -137,7 +202,7 @@ fn html_to_text(html: &str) -> String {
         }
     }
     
-    // Collapse whitespace
+    // Collapse whitespace aggressively
     result.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 

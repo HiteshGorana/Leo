@@ -179,8 +179,16 @@ async fn run_agent_once(config: &leo::config::Config, message: &str, _session: &
     Ok(response.content)
 }
 
-async fn run_agent_interactive(config: &leo::config::Config, session: &str) -> Result<()> {
+async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> Result<()> {
     use std::io::{self, Write};
+    use leo::agent::{AgentLoop, Message, Context};
+    use leo::agent::gemini::GeminiClient;
+    use leo::agent::GeminiOAuthClient;
+    
+    // Initialize Context ONCE to keep tools (like Browser Bridge) alive
+    println!("🦁 Initializing tools...");
+    let mut ctx = Context::new(config)?;
+    println!("✓ Ready! (Browser Extension can now connect)\n");
     
     loop {
         // Blue "You"
@@ -201,7 +209,26 @@ async fn run_agent_interactive(config: &leo::config::Config, session: &str) -> R
         }
         
         // Green "Bot", Red "Error"
-        match run_agent_once(config, input, session).await {
+        // We inline the agent run logic here to reuse ctx
+        let result = async {
+            let response = match config.provider.as_str() {
+                "google-cli" => {
+                    let client = GeminiOAuthClient::from_cli(&config.model)?;
+                    let agent = AgentLoop::new(client, config.max_iterations);
+                    let msg = Message::user(input);
+                    agent.run(msg, &mut ctx).await?
+                }
+                _ => {
+                    let client = GeminiClient::new(&config.gemini_api_key, &config.model);
+                    let agent = AgentLoop::new(client, config.max_iterations);
+                    let msg = Message::user(input);
+                    agent.run(msg, &mut ctx).await?
+                }
+            };
+            Ok::<String, anyhow::Error>(response.content)
+        }.await;
+
+        match result {
             Ok(response) => println!("\n\x1b[1;32mBot\x1b[0m: {}\n", response),
             Err(e) => println!("\n\x1b[1;31mError\x1b[0m: {}\n", e),
         }
@@ -269,18 +296,23 @@ async fn run_gateway(_port: u16) -> Result<()> {
     
     println!("🐈 Initializing agent with provider: {}", config.provider);
     
+    // Initialize Context once to keep Browser Bridge alive
+    println!("🦁 Initializing tools...");
+    let ctx = leo::agent::Context::new(&config)?;
+    println!("✓ Tools ready! (Browser Extension can now connect)");
+
     match config.provider.as_str() {
         "google-cli" => {
             let client = GeminiOAuthClient::from_cli(&config.model)?;
             let agent = AgentLoop::new(client, config.max_iterations);
-            let channel = TelegramChannel::new(config, agent);
+            let channel = TelegramChannel::new(config, agent, ctx);
             println!("✓ Gateway started. Listening for Telegram messages...");
             channel.start().await?;
         }
         _ => {
             let client = GeminiClient::new(&config.gemini_api_key, &config.model);
             let agent = AgentLoop::new(client, config.max_iterations);
-            let channel = TelegramChannel::new(config, agent);
+            let channel = TelegramChannel::new(config, agent, ctx);
             println!("✓ Gateway started. Listening for Telegram messages...");
             channel.start().await?;
         }

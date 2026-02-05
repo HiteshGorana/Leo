@@ -17,18 +17,20 @@ pub struct TelegramChannel<C: LlmClient + 'static> {
     bot: Bot,
     config: Config,
     agent_loop: Arc<AgentLoop<C>>,
+    // Persistent context to keep tools (and history) alive
+    context: Arc<Mutex<Context>>,
     // Simple in-memory session lock to prevent concurrent processing for same chat
-    // In production this might need a distributed lock or queue
     locks: Arc<Mutex<HashMap<ChatId, Arc<Mutex<()>>>>>,
 }
 
 impl<C: LlmClient + Clone> TelegramChannel<C> {
-    pub fn new(config: Config, agent_loop: AgentLoop<C>) -> Self {
+    pub fn new(config: Config, agent_loop: AgentLoop<C>, context: Context) -> Self {
         let bot = Bot::new(&config.telegram.token);
         Self {
             bot,
             config,
             agent_loop: Arc::new(agent_loop),
+            context: Arc::new(Mutex::new(context)),
             locks: Arc::new(Mutex::new(HashMap::new())),
         }
     }
@@ -64,13 +66,8 @@ impl<C: LlmClient + Clone> TelegramChannel<C> {
         };
         let _guard = lock.lock().await;
 
-        // Prepare context
-        // In a real app we would load a persisted session ID. 
-        // For now, we use the chat_id as the session key.
-        // Also note: we're creating a fresh Context for each message here.
-        // In the full Python version, SessionManager handles history.
-        // TODO: Implement proper SessionManager in Rust.
-        let mut ctx = Context::new(&self.config)?;
+        // Use persistent context
+        let mut ctx = self.context.lock().await;
         
         // Convert to Agent Message
         let msg = Message::user(text);
@@ -136,6 +133,7 @@ impl<C: LlmClient + Clone + 'static> Channel for TelegramChannel<C> {
             bot: self.bot.clone(),
             config: self.config.clone(),
             agent_loop: self.agent_loop.clone(),
+            context: self.context.clone(),
             locks: self.locks.clone(),
         });
         

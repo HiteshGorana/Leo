@@ -56,9 +56,15 @@ impl ToolRunner {
         runner.register(MemoryTool::new(workspace.clone()));
         runner.register(TaskTool::new(workspace.clone()));
         
-        // Web tools
-        runner.register(WebSearchTool);
-        runner.register(WebFetchTool);
+        // Create Browser Bridge (Extension) instance first to share it
+        let browser = super::browser_bridge::BrowserBridgeTool::new();
+
+        // Web tools (now with browser support)
+        runner.register(WebSearchTool::new(Some(browser.clone())));
+        runner.register(WebFetchTool::new(Some(browser.clone())));
+        
+        // Browser Bridge (registered as its own tool too)
+        runner.register(browser);
         
         runner
     }
