@@ -1,8 +1,12 @@
+<div align="center">
+
 # Leo 🦁
 
 ![Leo Cover](assets/cover.png)
 
 > **Roaringly fast. Delightfully simple. Pure Rust.**
+
+</div>
 
 Leo is an ultra-lightweight personal AI assistant framework designed to be your own personal companion on any OS and any platform. Built with a "pure Rust" philosophy, it prioritizes speed, type safety, and simplicity.
 
