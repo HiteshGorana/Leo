@@ -2,7 +2,7 @@
 
 # Leo 🦁
 
-![Leo Cover](assets/cover.png)
+![Leo Cover](assets/ghibli_cover.png)
 
 > **Roaringly fast. Delightfully simple. Pure Rust.**
 
