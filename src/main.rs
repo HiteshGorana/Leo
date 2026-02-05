@@ -3,6 +3,7 @@
 use clap::{Parser, Subcommand};
 use tracing_subscriber::EnvFilter;
 use anyhow::Result;
+use colored::Colorize;
 
 #[derive(Parser)]
 #[command(name = "leo")]
@@ -52,6 +53,9 @@ enum Commands {
     
     /// Show Leo status
     Status,
+
+    /// Reset Leo - delete all configuration and data
+    Reset,
 }
 
 #[tokio::main]
@@ -86,13 +90,14 @@ async fn main() -> Result<()> {
     
     match cli.command {
         Commands::Onboard => {
-            println!("🦁 Initializing Leo...");
             leo::config::onboard()?;
-            println!("✓ Leo is ready!");
-            println!("\nNext steps:");
-            println!("  1. Add your Gemini API key to ~/.leo/config.json");
-            println!("     OR set \"provider\": \"google-cli\" and run 'leo login'");
-            println!("  2. Chat: leo agent -m \"Hello!\"");
+            
+            // Reload config to check provider
+            let config = leo::config::load()?;
+            if config.provider == "google-cli" {
+                println!();
+                run_login(false).await?;
+            }
         }
         
         Commands::Login { dry_run } => {
@@ -110,42 +115,58 @@ async fn main() -> Result<()> {
             if let Some(msg) = message {
                 // Single message mode
                 let response = run_agent_once(&config, &msg, &session).await?;
-                println!("\n🐈 {}", response);
+                println!("\n  {} {}", "🐈".green(), response);
             } else {
                 // Interactive mode
-                println!("🦁 Interactive mode (Ctrl+C to exit)\n");
+                leo::ui::print_leo_header(&config.model, &config.provider);
                 run_agent_interactive(&config, &session).await?;
             }
         }
         
         Commands::Gateway { port, verbose } => {
+            let config = leo::config::load()?;
+            leo::ui::print_leo_header(&config.model, &format!("Gateway:{}", config.provider));
+            
             if verbose {
                 tracing::info!("Starting gateway on port {}", port);
             }
-            println!("🦁 Starting Leo gateway on port {}...", port);
             run_gateway(port).await?;
         }
         
         Commands::Status => {
             let config = leo::config::load()?;
-            println!("🦁 Leo Status\n");
-            println!("Workspace: {:?}", config.workspace);
-            println!("Model: {}", config.model);
-            println!("Provider: {}", config.provider);
+            leo::ui::print_leo_header(&config.model, &config.provider);
+            
+            println!("  {} {:?}", "Workspace:".black().bold(), config.workspace);
             
             match config.provider.as_str() {
                 "gemini" => {
-                    println!("Gemini API: {}", if config.gemini_api_key.is_empty() { "not set" } else { "✓" });
+                    let status = if config.gemini_api_key.is_empty() { 
+                        "not set".red() 
+                    } else { 
+                        "✓".green() 
+                    };
+                    println!("  {} {}", "Gemini API:".black().bold(), status);
                 }
                 "google-cli" => {
                     let has_creds = leo::auth::GeminiAuthProvider::has_valid_credentials()
                         .unwrap_or(false);
-                    println!("OAuth credentials: {}", if has_creds { "✓" } else { "not set (run 'leo login')" });
+                    let status = if has_creds { 
+                        "✓".green() 
+                    } else { 
+                        "not set (run 'leo login')".red() 
+                    };
+                    println!("  {} {}", "OAuth credentials:".black().bold(), status);
                 }
                 _ => {
-                    println!("Unknown provider: {}", config.provider);
+                    println!("  {} {}", "Unknown provider:".black().bold(), config.provider);
                 }
             }
+            println!();
+        }
+        
+        Commands::Reset => {
+            leo::config::reset()?;
         }
     }
     
@@ -184,15 +205,16 @@ async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> 
     use leo::agent::{AgentLoop, Message, Context};
     use leo::agent::gemini::GeminiClient;
     use leo::agent::GeminiOAuthClient;
+    use leo::ui;
     
     // Initialize Context ONCE to keep tools (like Browser Bridge) alive
-    println!("🦁 Initializing tools...");
+    ui::print_thinking("Initializing tools");
     let mut ctx = Context::new(config)?;
-    println!("✓ Ready! (Browser Extension can now connect)\n");
+    ui::print_success("Ready! (Browser Extension can now connect)\n");
     
     loop {
         // Blue "You"
-        print!("\x1b[1;34mYou\x1b[0m: ");
+        print!("  \x1b[1;34mYou\x1b[0m: ");
         io::stdout().flush()?;
         
         let mut input = String::new();
@@ -200,7 +222,7 @@ async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> 
         let input = input.trim();
         
         if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
-            println!("👋 Bye!");
+            println!("\n  👋 Bye!");
             break;
         }
         
@@ -229,8 +251,8 @@ async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> 
         }.await;
 
         match result {
-            Ok(response) => println!("\n\x1b[1;32mBot\x1b[0m: {}\n", response),
-            Err(e) => println!("\n\x1b[1;31mError\x1b[0m: {}\n", e),
+            Ok(response) => println!("\n  \x1b[1;32mLeo\x1b[0m: {}\n", response),
+            Err(e) => println!("\n  \x1b[1;31mError\x1b[0m: {}\n", e),
         }
     }
     
@@ -239,8 +261,10 @@ async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> 
 
 async fn run_login(dry_run: bool) -> Result<()> {
     use leo::auth::{extract_cli_credentials, GeminiAuthProvider};
+    use leo::ui;
     
-    println!("🔐 Extracting credentials from Gemini CLI...\n");
+    ui::print_leo_header("Authentication", "Google SDK");
+    ui::print_thinking("Extracting credentials from Gemini CLI");
     
     match extract_cli_credentials() {
         Ok(creds) => {
@@ -249,10 +273,10 @@ async fn run_login(dry_run: bool) -> Result<()> {
             } else {
                 creds.client_id.clone()
             };
-            println!("✓ Found client_id: {}", masked_id);
+            ui::print_step(&format!("Found client_id: {}", masked_id));
             
             if dry_run {
-                println!("\n(dry run - skipping OAuth flow)");
+                println!("\n  (dry run - skipping OAuth flow)");
                 return Ok(());
             }
             
@@ -260,14 +284,15 @@ async fn run_login(dry_run: bool) -> Result<()> {
             let provider = GeminiAuthProvider::new(creds.client_id, creds.client_secret);
             let _token = provider.get_valid_token().await?;
             
-            println!("\n✓ Authentication successful!");
-            println!("  Credentials saved to ~/.leo/credentials.json");
-            println!("\nYou can now use: leo agent -m \"Hello!\"");
+            println!();
+            ui::print_success("Authentication successful!");
+            ui::print_step("Credentials saved to ~/.leo/credentials.json");
+            ui::print_step("You can now use: leo agent -m \"Hello!\"");
         }
         Err(e) => {
-            println!("❌ Failed to extract credentials: {}", e);
-            println!("\nMake sure you have the Gemini CLI installed:");
-            println!("  npm install -g @google/gemini-cli");
+            ui::print_error(&format!("Failed to extract credentials: {}", e));
+            println!("\n  Make sure you have the Gemini CLI installed:");
+            println!("    npm install -g @google/gemini-cli");
             return Err(e.into());
         }
     }

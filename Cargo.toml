@@ -58,6 +58,12 @@ ctrlc = "3.4"
 tokio-tungstenite = "0.28.0"
 futures-util = "0.3.31"
 
+# UI and Interactivity
+colored = "2.0"
+inquire = "0.6"
+indicatif = "0.17"
+terminal_size = "0.2"
+
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3.0"

@@ -14,72 +14,116 @@ pub const CALLBACK_PORT: u16 = 8085;
 
 /// Success HTML page shown after authorization
 const SUCCESS_HTML: &str = r#"<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Authorization Successful</title>
+    <meta charset="UTF-8">
+    <title>Leo | Authorization Successful</title>
     <style>
+        :root {
+            --bg: #0b0e14;
+            --amber: #fbbf24;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-align: center;
         }
         .container {
-            text-align: center;
-            background: white;
-            padding: 3rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 400px;
+            padding: 40px;
         }
-        .checkmark { font-size: 4rem; }
-        h1 { color: #333; margin: 1rem 0; }
-        p { color: #666; }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 12px;
+            color: var(--amber);
+            letter-spacing: -0.5px;
+        }
+        p {
+            font-size: 15px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="checkmark">✓</div>
-        <h1>Authorization Successful!</h1>
-        <p>You can close this window and return to the terminal.</p>
+        <div class="icon">🦁</div>
+        <h1>Authorization Successful</h1>
+        <p>Leo has been granted access.<br>You can close this window and return to your terminal.</p>
     </div>
 </body>
 </html>"#;
 
 /// Error HTML page
 const ERROR_HTML: &str = r#"<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Authorization Failed</title>
+    <meta charset="UTF-8">
+    <title>Leo | Authorization Failed</title>
     <style>
+        :root {
+            --bg: #0b0e14;
+            --red: #ef4444;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+            text-align: center;
         }
         .container {
-            text-align: center;
-            background: white;
-            padding: 3rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 400px;
+            padding: 40px;
         }
-        .error { font-size: 4rem; }
-        h1 { color: #333; margin: 1rem 0; }
-        p { color: #666; }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 12px;
+            color: var(--red);
+            letter-spacing: -0.5px;
+        }
+        p {
+            font-size: 15px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="error">✗</div>
+        <div class="icon">⚠️</div>
         <h1>Authorization Failed</h1>
-        <p>Please try again or check the terminal for details.</p>
+        <p>Something went wrong during the connection.<br>Please try again or check your terminal.</p>
     </div>
 </body>
 </html>"#;

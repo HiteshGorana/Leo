@@ -136,24 +136,60 @@ pub fn save(config: &Config) -> Result<()> {
 
 /// Initialize configuration and workspace
 pub fn onboard() -> Result<()> {
-    let config = Config::default();
-    
-    // Create workspace directory
+    use inquire::{Select, Text, Confirm};
+    use crate::ui;
+
+    ui::print_leo_header("Setup Wizard", "Local");
+    println!("  Welcome! I'll help you get Leo configured in just a few steps.\n");
+
+    let mut config = Config::default();
+
+    // 1. Select Provider
+    let providers = vec!["Gemini (API Key - Fast)", "Google CLI (OAuth - No key needed)"];
+    let provider_choice = Select::new("Choose your AI provider:", providers).prompt()
+        .map_err(|e| Error::Config(format!("Prompt failed: {}", e)))?;
+
+    if provider_choice.contains("API Key") {
+        config.provider = "gemini".to_string();
+        let key = Text::new("Enter your Gemini API Key:").prompt()
+            .map_err(|e| Error::Config(format!("Prompt failed: {}", e)))?;
+        config.gemini_api_key = key;
+    } else {
+        config.provider = "google-cli".to_string();
+    }
+
+    // 2. Confirm Workspace
+    ui::print_step(&format!("Default workspace is at {:?}", config.workspace));
+    let change_path = Confirm::new("Use default workspace path?").with_default(true).prompt()
+        .map_err(|e| Error::Config(format!("Prompt failed: {}", e)))?;
+
+    if !change_path {
+        let new_path = Text::new("Enter custom workspace path:").prompt()
+            .map_err(|e| Error::Config(format!("Prompt failed: {}", e)))?;
+        config.workspace = PathBuf::from(new_path);
+    }
+
+    // 3. Setup Folders
+    ui::print_thinking("Creating directories");
     std::fs::create_dir_all(&config.workspace)?;
+    std::fs::create_dir_all(config.workspace.join("memory"))?;
+    std::fs::create_dir_all(config.workspace.join("skills"))?;
     
-    // Create memory directory
-    let memory_dir = config.workspace.join("memory");
-    std::fs::create_dir_all(&memory_dir)?;
-    
-    // Create skills directory
-    let skills_dir = config.workspace.join("skills");
-    std::fs::create_dir_all(&skills_dir)?;
-    
-    // Create bootstrap files
+    ui::print_thinking("Bootstrapping AGENTS.md and MEMORY.md");
     create_bootstrap_files(&config.workspace)?;
     
-    // Save config
+    // 4. Save Config
+    ui::print_thinking("Saving configuration");
     save(&config)?;
+    
+    println!();
+    ui::print_success("Setup complete!");
+    
+    if config.provider == "google-cli" {
+        ui::print_step("Preparing Google SDK authentication...");
+    } else {
+        ui::print_step("You're all set! Run 'leo agent' to start chatting.");
+    }
     
     Ok(())
 }
@@ -187,6 +223,34 @@ This file stores important information that should persist across sessions.
     std::fs::write(workspace.join("AGENTS.md"), agents_md)?;
     std::fs::write(workspace.join("memory").join("MEMORY.md"), memory_md)?;
     
+    Ok(())
+}
+
+/// Reset Leo by deleting all configuration and data
+pub fn reset() -> Result<()> {
+    use inquire::Confirm;
+    use crate::ui;
+
+    ui::print_warning("CAUTION: This will delete all Leo configuration, memory, and moments.");
+    
+    let confirmed = Confirm::new("Are you absolutely sure you want to reset Leo?")
+        .with_default(false)
+        .prompt()
+        .map_err(|e| Error::Config(format!("Prompt failed: {}", e)))?;
+
+    if confirmed {
+        let dir = config_dir();
+        if dir.exists() {
+            ui::print_thinking(&format!("Deleting {:?}", dir));
+            std::fs::remove_dir_all(dir)?;
+            ui::print_success("Leo has been reset.");
+        } else {
+            ui::print_step("No configuration directory found.");
+        }
+    } else {
+        ui::print_step("Reset cancelled.");
+    }
+
     Ok(())
 }
 
