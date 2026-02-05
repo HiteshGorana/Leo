@@ -118,14 +118,14 @@ async fn main() -> Result<()> {
                 println!("\n  {} {}", "🦁".green(), response);
             } else {
                 // Interactive mode
-                leo::ui::print_leo_header(&config.model, &config.provider);
+                leo::ui::print_leo_header_with_emotion(&config.model, &config.provider, leo::ui::LionEmotion::Happy);
                 run_agent_interactive(&config, &session).await?;
             }
         }
         
         Commands::Gateway { port, verbose } => {
             let config = leo::config::load()?;
-            leo::ui::print_leo_header(&config.model, &format!("Gateway:{}", config.provider));
+            leo::ui::print_leo_header_with_emotion(&config.model, &format!("Gateway:{}", config.provider), leo::ui::LionEmotion::Anxiety);
             
             if verbose {
                 tracing::info!("Starting gateway on port {}", port);
@@ -135,7 +135,7 @@ async fn main() -> Result<()> {
         
         Commands::Status => {
             let config = leo::config::load()?;
-            leo::ui::print_leo_header(&config.model, &config.provider);
+            leo::ui::print_leo_header_with_emotion(&config.model, &config.provider, leo::ui::LionEmotion::Normal);
             
             println!("  {} {:?}", "Workspace:".black().bold(), config.workspace);
             
@@ -166,6 +166,7 @@ async fn main() -> Result<()> {
         }
         
         Commands::Reset => {
+            leo::ui::print_leo_header_with_emotion("Maintenance", "Local", leo::ui::LionEmotion::Fear);
             leo::config::reset()?;
         }
     }
@@ -263,7 +264,7 @@ async fn run_login(dry_run: bool) -> Result<()> {
     use leo::auth::{extract_cli_credentials, GeminiAuthProvider};
     use leo::ui;
     
-    ui::print_leo_header("Authentication", "Google SDK");
+    ui::print_leo_header_with_emotion("Authentication", "Google SDK", ui::LionEmotion::Happy);
     ui::print_thinking("Extracting credentials from Gemini CLI");
     
     match extract_cli_credentials() {

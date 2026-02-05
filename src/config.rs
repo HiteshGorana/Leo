@@ -2,7 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use colored::Colorize;
 use crate::Result;
 use crate::error::Error;
 
@@ -138,10 +137,9 @@ pub fn save(config: &Config) -> Result<()> {
 /// Initialize configuration and workspace
 pub fn onboard() -> Result<()> {
     use crate::ui;
-    use colored::Colorize;
     use inquire::{Select, Text, Confirm};
 
-    ui::print_leo_header("Setup Wizard", "Local");
+    ui::print_leo_header_with_emotion("Setup Wizard", "Local", ui::LionEmotion::Happy);
     println!("  Welcome! I'll help you get Leo configured in just a few steps.\n");
 
     let mut config = Config::default();

@@ -1,23 +1,63 @@
 use colored::*;
 use terminal_size::{Width, Height, terminal_size};
 
-const RETRO_LION_OPEN: &str = r#"
-     ━━━━━━━
-    ┃  ● ●  ┃
-    ┃   ^   ┃
-    ┗━━━━━━━┛
-     ┛     ┗
-"#;
+#[derive(Debug, Clone, Copy)]
+pub enum LionEmotion {
+    Normal,
+    Blink,
+    Happy,
+    Sad,
+    Fear,
+    Anger,
+    Disgust,
+    Surprise,
+    Sleep,
+    Jealousy,
+    Empathy,
+    Anxiety,
+    Contempt,
+    Loneliness,
+    Boredom,
+}
 
-const RETRO_LION_BLINK: &str = r#"
+impl LionEmotion {
+    pub fn get_face(&self) -> (&str, &str) {
+        match self {
+            LionEmotion::Normal => (" ● ● ", "  ^  "),
+            LionEmotion::Blink => (" - - ", "  ^  "),
+            LionEmotion::Happy => (" ^ ^ ", "  v  "),
+            LionEmotion::Sad => (" T T ", "  -  "),
+            LionEmotion::Fear => (" O O ", "  w  "),
+            LionEmotion::Anger => (" \\ / ", "  ~  "),
+            LionEmotion::Disgust => (" x o ", "  -  "),
+            LionEmotion::Surprise => (" ! ! ", "  o  "),
+            LionEmotion::Sleep => (" z Z ", "     "),
+            LionEmotion::Jealousy => (" ¬ ¬ ", "  ^  "),
+            LionEmotion::Empathy => (" u u ", "  v  "),
+            LionEmotion::Anxiety => (" ; ; ", "  .  "),
+            LionEmotion::Contempt => (" _ _ ", "  /  "),
+            LionEmotion::Loneliness => (" · · ", "     "),
+            LionEmotion::Boredom => (" - - ", "  ~  "),
+        }
+    }
+
+    pub fn render(&self) -> String {
+        let (eyes, mouth) = self.get_face();
+        format!(r#"
      ━━━━━━━
-    ┃  - -  ┃
-    ┃   ^   ┃
+    ┃{}┃
+    ┃{}┃
     ┗━━━━━━━┛
      ┛     ┗
-"#;
+"#, eyes, mouth).trim_matches('\n').to_string()
+    }
+}
 
 pub fn print_leo_header(model: &str, provider: &str) {
+    print_leo_header_with_emotion(model, provider, LionEmotion::Normal);
+}
+
+pub fn print_leo_header_with_emotion(model: &str, provider: &str, emotion: LionEmotion) {
     let (width, _) = terminal_size().unwrap_or((Width(80), Height(24)));
     let width = width.0 as usize;
 
@@ -29,12 +69,13 @@ pub fn print_leo_header(model: &str, provider: &str) {
     // Header line
     println!("  {} {}  {}", "Leo".yellow().bold(), version.black().bold(), "•".black().bold());
 
-    // Animated sequence
-    let frames = vec![RETRO_LION_OPEN, RETRO_LION_BLINK, RETRO_LION_OPEN];
+    // Animated sequence: Start -> Blink -> Target Emotion
+    let frames = vec![LionEmotion::Normal, LionEmotion::Blink, emotion];
     
     // Clear and print frames
     for (i, frame) in frames.iter().enumerate() {
-        let logo_lines: Vec<&str> = frame.trim_matches('\n').lines().collect();
+        let logo_rendered = frame.render();
+        let logo_lines: Vec<&str> = logo_rendered.lines().collect();
         
         let mut info_lines = Vec::new();
         info_lines.push(format!("Welcome back, {}!", whoami::realname().cyan().bold()));
@@ -69,8 +110,10 @@ pub fn print_api_call(model: &str) {
 }
 
 pub fn print_api_response() {
-    // Minimalistic response indicator (just a subtle dot or similar)
-    // Actually, maybe nothing at all if it's super fast, or just a small check
+}
+
+pub fn print_leo_face(emotion: LionEmotion) {
+    println!("{}\n", emotion.render().yellow());
 }
 
 pub fn print_step(msg: &str) {
