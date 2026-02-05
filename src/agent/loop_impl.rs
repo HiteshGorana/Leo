@@ -23,9 +23,9 @@ impl<C: LlmClient> AgentLoop<C> {
     }
     
     /// Run the agent loop for a single message
-    pub async fn run(&self, message: Message, ctx: &mut Context) -> Result<Response> {
+    pub async fn run(&self, history: &[Message], message: Message, ctx: &mut Context) -> Result<Response> {
         // Build messages from context
-        let mut messages = ctx.build_messages(&[], &message.content);
+        let mut messages = ctx.build_messages(history, &message.content);
         
         info!("Starting agent loop with message: {}", message.content);
         
@@ -93,7 +93,7 @@ mod tests {
         let agent = AgentLoop::new(client, 10);
         
         let msg = Message::user("Hi there");
-        let response = agent.run(msg, &mut ctx).await.unwrap();
+        let response = agent.run(&[], msg, &mut ctx).await.unwrap();
         
         assert_eq!(response.content, "Hello, human!");
     }
@@ -111,7 +111,7 @@ mod tests {
         let agent = AgentLoop::new(client, 10);
         
         let msg = Message::user("Read test.txt");
-        let response = agent.run(msg, &mut ctx).await.unwrap();
+        let response = agent.run(&[], msg, &mut ctx).await.unwrap();
         
         assert_eq!(response.content, "The file contains: test content");
     }

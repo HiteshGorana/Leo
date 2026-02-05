@@ -187,14 +187,14 @@ async fn run_agent_once(config: &leo::config::Config, message: &str, _session: &
             let client = GeminiOAuthClient::from_cli(&config.model)?;
             let agent = AgentLoop::new(client, config.max_iterations);
             let msg = Message::user(message);
-            agent.run(msg, &mut ctx).await?
+            agent.run(&[], msg, &mut ctx).await?
         }
         _ => {
             // Default: Use API key authentication
             let client = GeminiClient::new(&config.gemini_api_key, &config.model);
             let agent = AgentLoop::new(client, config.max_iterations);
             let msg = Message::user(message);
-            agent.run(msg, &mut ctx).await?
+            agent.run(&[], msg, &mut ctx).await?
         }
     };
     
@@ -213,6 +213,9 @@ async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> 
     let mut ctx = Context::new(config)?;
     ui::print_success("Ready! (Browser Extension can now connect)\n");
     
+    // History for interactive session
+    let mut history: Vec<Message> = Vec::new();
+
     loop {
         // Blue "You"
         print!("  \x1b[1;34mYou\x1b[0m: ");
@@ -233,30 +236,37 @@ async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> 
         
         // Green "Bot", Red "Error"
         // We inline the agent run logic here to reuse ctx
+        let history_clone = history.clone();
         let result = async {
             let response = match config.provider.as_str() {
                 "google-cli" => {
                     let client = GeminiOAuthClient::from_cli(&config.model)?;
                     let agent = AgentLoop::new(client, config.max_iterations);
                     let msg = Message::user(input);
-                    agent.run(msg, &mut ctx).await?
+                    agent.run(&history_clone, msg, &mut ctx).await?
                 }
                 _ => {
                     let client = GeminiClient::new(&config.gemini_api_key, &config.model);
                     let agent = AgentLoop::new(client, config.max_iterations);
                     let msg = Message::user(input);
-                    agent.run(msg, &mut ctx).await?
+                    agent.run(&history_clone, msg, &mut ctx).await?
                 }
             };
-            Ok::<String, anyhow::Error>(response.content)
+            Ok::<leo::agent::Response, anyhow::Error>(response)
         }.await;
 
         match result {
-            Ok(response) => println!("\n  \x1b[1;32mLeo\x1b[0m: {}\n", response),
+            Ok(response) => {
+                let content = response.content;
+                println!("\n  \x1b[1;32mLeo\x1b[0m: {}\n", content);
+                
+                // Update history
+                history.push(Message::user(input));
+                history.push(Message::assistant(content));
+            },
             Err(e) => println!("\n  \x1b[1;31mError\x1b[0m: {}\n", e),
         }
     }
-    
     Ok(())
 }
 

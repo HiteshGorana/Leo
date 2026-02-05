@@ -21,6 +21,8 @@ pub struct TelegramChannel<C: LlmClient + 'static> {
     context: Arc<Mutex<Context>>,
     // Simple in-memory session lock to prevent concurrent processing for same chat
     locks: Arc<Mutex<HashMap<ChatId, Arc<Mutex<()>>>>>,
+    // Conversation history
+    history: Arc<Mutex<HashMap<ChatId, Vec<Message>>>>,
 }
 
 impl<C: LlmClient + Clone> TelegramChannel<C> {
@@ -32,6 +34,7 @@ impl<C: LlmClient + Clone> TelegramChannel<C> {
             agent_loop: Arc::new(agent_loop),
             context: Arc::new(Mutex::new(context)),
             locks: Arc::new(Mutex::new(HashMap::new())),
+            history: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -71,12 +74,26 @@ impl<C: LlmClient + Clone> TelegramChannel<C> {
         // Use persistent context
         let mut ctx = self.context.lock().await;
         
+        // Get history
+        let mut history_map = self.history.lock().await;
+        let user_history = history_map.entry(chat_id).or_insert_with(Vec::new);
+        
         // Convert to Agent Message
         let msg = Message::user(text);
         
-        // Run Agent Loop
-        match self.agent_loop.run(msg, &mut ctx).await {
+        // Run Agent Loop with history
+        match self.agent_loop.run(user_history, msg.clone(), &mut ctx).await {
             Ok(response) => {
+                // Update history on success
+                user_history.push(msg);
+                user_history.push(Message::assistant(response.content.clone()));
+                
+                // Limit history size (optional, prevent infinite growth)
+                if user_history.len() > 50 {
+                    let remove_count = user_history.len() - 50;
+                    user_history.drain(0..remove_count);
+                }
+                
                 self.bot.send_message(chat_id, response.content).await?;
                 status.done();
             }
@@ -150,6 +167,7 @@ impl<C: LlmClient + Clone + 'static> Channel for TelegramChannel<C> {
             agent_loop: self.agent_loop.clone(),
             context: self.context.clone(),
             locks: self.locks.clone(),
+            history: self.history.clone(),
         });
         
         async move {
