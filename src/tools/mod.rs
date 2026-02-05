@@ -13,6 +13,7 @@ mod git;
 mod memory;
 mod task;
 mod browser_bridge;
+mod find;
 
 pub use runner::{ToolRunner, ToolDefinition};
 

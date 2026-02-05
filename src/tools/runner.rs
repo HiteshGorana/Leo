@@ -10,6 +10,7 @@ use super::Tool;
 use super::filesystem::{ReadFileTool, WriteFileTool, ListDirTool};
 use super::edit::EditTool;
 use super::search::SearchTool;
+use super::find::FindFilesTool;
 use super::git::GitTool;
 use super::memory::MemoryTool;
 use super::task::TaskTool;
@@ -47,6 +48,7 @@ impl ToolRunner {
         runner.register(ListDirTool);
         runner.register(EditTool);
         runner.register(SearchTool::new(workspace.clone()));
+        runner.register(FindFilesTool::new(workspace.clone()));
         
         // Shell & Git tools
         runner.register(ExecTool::new(workspace.clone()));

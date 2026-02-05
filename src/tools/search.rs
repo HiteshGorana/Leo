@@ -57,7 +57,7 @@ impl SearchTool {
 #[async_trait]
 impl Tool for SearchTool {
     fn name(&self) -> &str { "search" }
-    fn description(&self) -> &str { "Search for a regex pattern in files within the workspace" }
+    fn description(&self) -> &str { "Search for text in files (supports regex or literal text, case-sensitive or insensitive)" }
 
     fn parameters(&self) -> Value {
         json!({
@@ -65,11 +65,19 @@ impl Tool for SearchTool {
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Regex pattern to search for"
+                    "description": "Text or regex pattern to search for"
                 },
                 "path": {
                     "type": "string",
                     "description": "Sub-directory to search in (optional, defaults to workspace root)"
+                },
+                "case_insensitive": {
+                    "type": "boolean",
+                    "description": "Ignore case when matching (default: false)"
+                },
+                "literal": {
+                    "type": "boolean",
+                    "description": "Treat query as literal text, not regex (default: false)"
                 }
             },
             "required": ["query"]
@@ -84,6 +92,14 @@ impl Tool for SearchTool {
         let sub_path = params.get("path")
             .and_then(|v| v.as_str())
             .map(PathBuf::from);
+        
+        let case_insensitive = params.get("case_insensitive")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        
+        let literal = params.get("literal")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
 
         let search_path = if let Some(p) = sub_path {
             self.workspace.join(p)
@@ -95,12 +111,23 @@ impl Tool for SearchTool {
             return Err(Error::Tool(format!("Path does not exist: {:?}", search_path)));
         }
 
-        let pattern = Regex::new(query)
+        // Build regex pattern
+        let pattern_str = if literal {
+            regex::escape(query)
+        } else {
+            query.to_string()
+        };
+        
+        let pattern_str = if case_insensitive {
+            format!("(?i){}", pattern_str)
+        } else {
+            pattern_str
+        };
+        
+        let pattern = Regex::new(&pattern_str)
             .map_err(|e| Error::Tool(format!("Invalid regex: {}", e)))?;
 
         let mut results = Vec::new();
-        // Run blocking search on a separate thread (though for now standard fs is fine for small workspaces)
-        // ideally we'd use tokio::task::spawn_blocking
         self.search_recursive(&search_path, &pattern, &mut results)
             .map_err(|e| Error::Tool(format!("Search failed: {}", e)))?;
 

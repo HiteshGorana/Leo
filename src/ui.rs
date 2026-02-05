@@ -147,17 +147,15 @@ pub fn print_tool(name: &str) {
 /// Shows: telegram → Leo (thinking) → telegram
 pub struct ChannelStatus {
     channel: String,
-    user: String,
 }
 
 impl ChannelStatus {
-    pub fn start(channel: &str, user: &str) -> Self {
+    pub fn start(channel: &str, _user: &str) -> Self {
         use std::io::Write;
         print!("  {} {} → Leo ", "◆".cyan(), channel.cyan());
         std::io::stdout().flush().unwrap();
         Self { 
             channel: channel.to_string(),
-            user: user.to_string(),
         }
     }
     
