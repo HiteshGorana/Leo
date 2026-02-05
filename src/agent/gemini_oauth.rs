@@ -14,7 +14,6 @@ use crate::auth::GeminiAuthProvider;
 use super::llm::{LlmClient, LlmResponse, Usage};
 use super::message::{Message, Role, ToolCallRequest};
 use crate::tools::ToolDefinition;
-use crate::ui;
 
 /// Code Assist API endpoint (same as Gemini CLI uses)
 const CODE_ASSIST_ENDPOINT: &str = "https://cloudcode-pa.googleapis.com";
@@ -374,7 +373,6 @@ impl LlmClient for GeminiOAuthClient {
         
         // Use Code Assist API endpoint (same as Gemini CLI)
         let url = self.build_code_assist_url("generateContent");
-        ui::print_api_call(&self.model);
         
         let mut retry_count = 0;
         let max_retries = 5;
@@ -393,7 +391,6 @@ impl LlmClient for GeminiOAuthClient {
             if response.status().is_success() {
                 // Code Assist API returns { response: { ... standard response ... } }
                 let code_assist_response: Value = response.json().await?;
-                ui::print_api_response();
                 
                 // Extract the nested response
                 let inner_response = code_assist_response.get("response")

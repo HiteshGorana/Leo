@@ -54,7 +54,9 @@ impl<C: LlmClient + Clone> TelegramChannel<C> {
             _ => return Ok(()),
         };
 
-        info!("Received message from {}: {}", chat_id, text);
+        // Start animated status line
+        let username = user.and_then(|u| u.username.as_deref()).unwrap_or("user");
+        let status = crate::ui::ChannelStatus::start("telegram", username);
 
         // Send "typing" action
         let _ = self.bot.send_chat_action(chat_id, teloxide::types::ChatAction::Typing).await;
@@ -75,12 +77,13 @@ impl<C: LlmClient + Clone> TelegramChannel<C> {
         // Run Agent Loop
         match self.agent_loop.run(msg, &mut ctx).await {
             Ok(response) => {
-                // Send response
                 self.bot.send_message(chat_id, response.content).await?;
+                status.done();
             }
             Err(e) => {
                 error!("Agent loop processing error: {}", e);
-                self.bot.send_message(chat_id, format!("❌ Error: {}", e)).await?;
+                self.bot.send_message(chat_id, format!("Error: {}", e)).await?;
+                status.error();
             }
         }
 

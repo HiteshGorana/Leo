@@ -106,7 +106,7 @@ pub fn print_leo_header_with_emotion(model: &str, provider: &str, emotion: LionE
 }
 
 pub fn print_api_call(model: &str) {
-    println!("  {} {} {}", "✦".yellow(), "Gemini".black().bold(), model.cyan());
+    println!("  {} {}", "▸".cyan(), model.cyan());
 }
 
 pub fn print_api_response() {
@@ -117,21 +117,66 @@ pub fn print_leo_face(emotion: LionEmotion) {
 }
 
 pub fn print_step(msg: &str) {
-    println!("  {} {}", "•".green(), msg);
+    println!("  {} {}", "→".blue(), msg);
 }
 
 pub fn print_success(msg: &str) {
-    println!("  {} {}", "✓".green().bold(), msg.green());
+    println!("  {} {}", "✔".green().bold(), msg.green());
 }
 
 pub fn print_warning(msg: &str) {
-    println!("  {} {}", "⚠️ ".yellow().bold(), msg.yellow());
+    println!("  {} {}", "!".yellow().bold(), msg.yellow());
 }
 
 pub fn print_error(msg: &str) {
-    println!("  {} {}", "❌".red().bold(), msg.red());
+    println!("  {} {}", "✖".red().bold(), msg.red());
 }
 
 pub fn print_thinking(msg: &str) {
-    println!("  {} {}...", "∴".magenta(), msg);
+    println!("  {} {}...", "→".magenta(), msg.dimmed());
+}
+
+/// Animated channel processing line - updates in place
+/// Shows: telegram → Leo (thinking) → telegram
+pub struct ChannelStatus {
+    channel: String,
+    user: String,
+}
+
+impl ChannelStatus {
+    pub fn start(channel: &str, user: &str) -> Self {
+        use std::io::Write;
+        print!("  {} {} → Leo ", "◆".cyan(), channel.cyan());
+        std::io::stdout().flush().unwrap();
+        Self { 
+            channel: channel.to_string(),
+            user: user.to_string(),
+        }
+    }
+    
+    /// Show thinking animation briefly, then complete
+    pub fn thinking(&self) {
+        use std::io::Write;
+        let frames = ["◐", "◓", "◑", "◒"];
+        for frame in frames.iter() {
+            print!("{}", frame.magenta());
+            std::io::stdout().flush().unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            print!("\x08"); // backspace
+        }
+    }
+    
+    /// Mark as complete
+    pub fn done(self) {
+        use std::io::Write;
+        println!("→ {} {}", self.channel.green(), "✔".green());
+        std::io::stdout().flush().unwrap();
+    }
+    
+    /// Mark as error
+    pub fn error(self) {
+        use std::io::Write;
+        println!("→ {} {}", self.channel.red(), "✖".red());
+        std::io::stdout().flush().unwrap();
+    }
 }

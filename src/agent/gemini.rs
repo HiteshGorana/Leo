@@ -9,7 +9,6 @@ use crate::error::Error;
 use super::llm::{LlmClient, LlmResponse, Usage};
 use super::message::{Message, Role, ToolCallRequest};
 use crate::tools::ToolDefinition;
-use crate::ui;
 
 const GEMINI_API_URL: &str = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -171,8 +170,6 @@ impl LlmClient for GeminiClient {
         if let Some(tool_config) = self.convert_tools(tools) {
             request["tools"] = tool_config;
         }
-        
-        ui::print_api_call(&self.model);
         
         let response = self.client
             .post(&self.build_url())

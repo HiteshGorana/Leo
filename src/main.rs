@@ -71,10 +71,10 @@ async fn main() -> Result<()> {
     
     ctrlc::set_handler(move || {
         if r.load(std::sync::atomic::Ordering::SeqCst) {
-            println!("\n👋 Bye!");
+            println!("\n  → Bye!");
             std::process::exit(0);
         } else {
-            println!("\n⚠️  Press Ctrl+C again to exit");
+            println!("\n  ! Press Ctrl+C again to exit");
             r.store(true, std::sync::atomic::Ordering::SeqCst);
             
             // Reset flag after 3 seconds
@@ -223,7 +223,7 @@ async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> 
         let input = input.trim();
         
         if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
-            println!("\n  👋 Bye!");
+            println!("\n  → Bye!");
             break;
         }
         
