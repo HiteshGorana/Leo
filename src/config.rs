@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use colored::Colorize;
 use crate::Result;
 use crate::error::Error;
 
@@ -136,8 +137,9 @@ pub fn save(config: &Config) -> Result<()> {
 
 /// Initialize configuration and workspace
 pub fn onboard() -> Result<()> {
-    use inquire::{Select, Text, Confirm};
     use crate::ui;
+    use colored::Colorize;
+    use inquire::{Select, Text, Confirm};
 
     ui::print_leo_header("Setup Wizard", "Local");
     println!("  Welcome! I'll help you get Leo configured in just a few steps.\n");
@@ -178,7 +180,16 @@ pub fn onboard() -> Result<()> {
     ui::print_thinking("Bootstrapping AGENTS.md and MEMORY.md");
     create_bootstrap_files(&config.workspace)?;
     
-    // 4. Save Config
+    // 4. Gateway Setup (Optional)
+    let gateways = vec!["None (Skip for now)", "Telegram Bot", "WhatsApp (Coming soon)", "Slack (Coming soon)"];
+    let gateway_choice = Select::new("Would you like to setup a Gateway (Remote Access)?", gateways).prompt()
+        .map_err(|e| Error::Config(format!("Prompt failed: {}", e)))?;
+
+    if gateway_choice.contains("Telegram") {
+        setup_telegram_gateway(&mut config)?;
+    }
+
+    // 5. Save Config
     ui::print_thinking("Saving configuration");
     save(&config)?;
     
@@ -190,6 +201,37 @@ pub fn onboard() -> Result<()> {
     } else {
         ui::print_step("You're all set! Run 'leo agent' to start chatting.");
     }
+    
+    Ok(())
+}
+
+/// Helper to setup Telegram gateway interactively
+pub fn setup_telegram_gateway(config: &mut Config) -> Result<()> {
+    use inquire::Text;
+    use crate::ui;
+    use colored::Colorize;
+
+    println!();
+    ui::print_step("To setup a Telegram bot:");
+    println!("    1. Message {} on Telegram", "@BotFather".cyan().bold());
+    println!("    2. Send {} and choose a name", "/newbot".cyan());
+    println!("    3. Copy the {} provided", "API Token".cyan());
+    println!();
+
+    let token = Text::new("Enter your Telegram Bot Token:").prompt()
+        .map_err(|e| Error::Config(format!("Prompt failed: {}", e)))?;
+
+    if token.is_empty() {
+        return Err(Error::Config("Token cannot be empty".to_string()));
+    }
+
+    config.telegram.enabled = true;
+    config.telegram.token = token;
+    
+    let user = whoami::username();
+    config.telegram.allow_from = vec![user.clone()];
+    
+    ui::print_step(&format!("Auto-whitelisted local user: {}", user.cyan()));
     
     Ok(())
 }

@@ -307,11 +307,30 @@ async fn run_gateway(_port: u16) -> Result<()> {
     use leo::adapters::{Channel, telegram::TelegramChannel};
 
     println!("∴ Loading configuration...");
-    let config = leo::config::load()?;
+    let mut config = leo::config::load()?;
     
     if !config.telegram.enabled {
-        println!("⚠️ Telegram is disabled in config. Enable it and set 'token' to run the gateway.");
-        return Ok(());
+        use inquire::Select;
+        println!("⚠️ No Gateway channels are enabled in your configuration.");
+        
+        let gateways = vec!["Telegram Bot", "WhatsApp (Coming soon)", "Slack (Coming soon)", "Skip"];
+        let choice = Select::new("Which gateway would you like to setup?", gateways).prompt()
+            .map_err(|e| anyhow::anyhow!("Prompt failed: {}", e))?;
+            
+        match choice {
+            "Telegram Bot" => {
+                leo::config::setup_telegram_gateway(&mut config)?;
+                leo::config::save(&config)?;
+            }
+            "Skip" => {
+                println!("  Gateway cannot start without an active channel.");
+                return Ok(());
+            }
+            _ => {
+                println!("  {} is not yet supported. Choose Telegram instead!", choice);
+                return Ok(());
+            }
+        }
     }
     
     // Create Agent Loop with appropriate client
