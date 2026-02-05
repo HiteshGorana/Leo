@@ -136,6 +136,13 @@ pub fn print_thinking(msg: &str) {
     println!("  {} {}...", "→".magenta(), msg.dimmed());
 }
 
+/// Log tool execution for debugging (inline, no newline)
+pub fn print_tool(name: &str) {
+    use std::io::Write;
+    print!(" → ⚙ {}", name.blue());
+    std::io::stdout().flush().unwrap();
+}
+
 /// Animated channel processing line - updates in place
 /// Shows: telegram → Leo (thinking) → telegram
 pub struct ChannelStatus {
@@ -169,14 +176,14 @@ impl ChannelStatus {
     /// Mark as complete
     pub fn done(self) {
         use std::io::Write;
-        println!("→ {} {}", self.channel.green(), "✔".green());
+        println!(" → {} {}", self.channel.green(), "✔".green());
         std::io::stdout().flush().unwrap();
     }
     
     /// Mark as error
     pub fn error(self) {
         use std::io::Write;
-        println!("→ {} {}", self.channel.red(), "✖".red());
+        println!(" → {} {}", self.channel.red(), "✖".red());
         std::io::stdout().flush().unwrap();
     }
 }

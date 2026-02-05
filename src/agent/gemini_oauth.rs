@@ -410,7 +410,8 @@ impl LlmClient for GeminiOAuthClient {
             if status.as_u16() == 429 || error_text.contains("RESOURCE_EXHAUSTED") {
                 if retry_count < max_retries {
                     retry_count += 1;
-                    println!("⚠️ Rate limit exceeded (429). Retrying in {:?} (Ensure quota is sufficient)...", backoff);
+                    // Silent retry - don't spam the console
+                    tracing::debug!("Rate limit (429), retry {} in {:?}", retry_count, backoff);
                     
                     tokio::time::sleep(backoff).await;
                     
@@ -422,7 +423,7 @@ impl LlmClient for GeminiOAuthClient {
                 }
             }
             
-            println!("❌ Code Assist API error ({}): {}", status, error_text);
+            tracing::error!("API error ({}): {}", status, error_text);
             
             // If unauthorized, token might have expired
             if status.as_u16() == 401 {

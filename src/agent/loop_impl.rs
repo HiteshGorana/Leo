@@ -64,6 +64,9 @@ impl<C: LlmClient> AgentLoop<C> {
     async fn execute_tool(&self, ctx: &mut Context, tool_call: &ToolCallRequest) -> String {
         debug!("Executing tool: {} with args: {}", tool_call.name, tool_call.arguments);
         
+        // Log tool usage for debugging
+        crate::ui::print_tool(&tool_call.name);
+        
         match ctx.tool_runner.execute(&tool_call.name, tool_call.arguments.clone()).await {
             Ok(result) => {
                 debug!("Tool {} succeeded: {} chars", tool_call.name, result.len());
