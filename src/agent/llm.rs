@@ -62,10 +62,12 @@ pub trait LlmClient: Send + Sync {
 }
 
 /// Fake LLM client for testing
+#[allow(dead_code)]
 pub struct FakeLlmClient {
     responses: std::sync::Mutex<std::collections::VecDeque<LlmResponse>>,
 }
 
+#[allow(dead_code)]
 impl FakeLlmClient {
     /// Create with predefined text responses
     pub fn new(responses: Vec<&str>) -> Self {

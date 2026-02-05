@@ -6,7 +6,7 @@ use crate::Result;
 // use crate::error::Error;
 use crate::config::Config;
 use super::Channel;
-use crate::agent::{AgentLoop, Context, Message, InboundMessage, LlmClient};
+use crate::agent::{AgentLoop, Context, Message, LlmClient};
 use tokio::sync::Mutex;
 use std::sync::Arc;
 use tracing::{info, error, debug};

@@ -4,6 +4,8 @@
 
 **Leo** — Roaringly fast. Delightfully simple. Pure Rust. 🦁
 
+An **Ultra-lightweight AI Personal Assistant**.
+
 This document describes the Rust implementation architecture following the pattern:
 
 ```

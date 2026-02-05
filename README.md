@@ -5,22 +5,24 @@
 ![Leo Cover](assets/ghibli_cover.png)
 
 > **Roaringly fast. Delightfully simple. Pure Rust.**
+>
+> ⚠️ **Beta Status**: Active development. Expect sharp edges! 🦁
 
 </div>
 
-Leo is an ultra-lightweight personal AI assistant framework designed to be your own personal companion on any OS and any platform. Built with a "pure Rust" philosophy, it prioritizes speed, type safety, and simplicity.
+Leo is an ultra-lightweight **AI Personal Assistant** designed to be your own personal companion on any OS and any platform.
 
 ## Features
 
 - **🦁 Personal AI**: Runs locally or connects to powerful LLMs like Gemini.
-- **🚀 Ultra-fast**: Built in Rust for maximum performance and minimal footprint.
+- **🚀 Ultra-fast**: Built in Rust for maximum performance.
 - **🔐 Secure Authentication**: Integrated Gemini CLI OAuth support (no loose API keys!).
 - **🔌 Extensible**: Modular architecture with support for custom Skills and Tools.
 - **💬 Multi-Platform**: Connects to Telegram, acts as a CLI tool, or runs as a background daemon.
 - **🧠 Intelligent**: Persistent memory and context management.
 - **🛠️ Capable**: Native tools for file editing, searching (grep), git operations, and web access.
 - **🛡️ Robust**: Built-in rate limit handling and resilience.
-- **⚡ Fast**: Pure Rust implementation..
+- **⚡ Fast**: Pure Rust implementation.
 
 ## Quick Start
 

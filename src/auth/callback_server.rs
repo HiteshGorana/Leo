@@ -88,6 +88,7 @@ const ERROR_HTML: &str = r#"<!DOCTYPE html>
 #[derive(Debug, Clone)]
 pub struct AuthorizationResult {
     pub code: String,
+    #[allow(dead_code)]
     pub state: Option<String>,
 }
 

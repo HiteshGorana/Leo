@@ -248,12 +248,11 @@ async fn run_login(dry_run: bool) -> Result<()> {
     Ok(())
 }
 
-async fn run_gateway(port: u16) -> Result<()> {
-    use leo::agent::{AgentLoop, Context};
+async fn run_gateway(_port: u16) -> Result<()> {
+    use leo::agent::AgentLoop;
     use leo::agent::gemini::GeminiClient;
     use leo::agent::GeminiOAuthClient;
     use leo::adapters::{Channel, telegram::TelegramChannel};
-    use leo::config::Config;
 
     println!("🐈 Loading configuration...");
     let config = leo::config::load()?;

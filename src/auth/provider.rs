@@ -34,8 +34,10 @@ struct TokenResponse {
     #[serde(default)]
     refresh_token: Option<String>,
     expires_in: Option<i64>,
+    #[allow(dead_code)]
     token_type: String,
     #[serde(default)]
+    #[allow(dead_code)]
     scope: Option<String>,
 }
 
