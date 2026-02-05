@@ -216,21 +216,46 @@ To use the Telegram adapter:
    - Copy the HTTP API Token (e.g., `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`).
 
 2. **Configure Leo**:
-   - Edit `~/.leo/config.json`:
+   - Run `cargo run -- gateway` and follow the interactive setup.
+   - Or manually edit `~/.leo/config.json`:
      ```json
      {
        "telegram": {
          "enabled": true,
          "token": "YOUR_BOT_TOKEN",
-         "allow_from": ["your_username"] // Optional: restrict access
+         "allow_from": []
        }
      }
      ```
+   - **allow_from**: Empty list allows all users. Add Telegram usernames to restrict access.
 
 3. **Run the Gateway**:
    ```bash
    cargo run -- gateway
    ```
+
+4. **Console Logging**:
+   The gateway shows a clean single-line log for each message:
+   ```
+   ◆ telegram → Leo → ⚙ read_file → telegram ✔
+   ```
+   - `◆` Message received
+   - `⚙ tool_name` Each tool executed
+   - `✔` Response sent successfully
+   - `✖` Error occurred
+
+## UI Logging
+
+Leo uses a minimal, clean logging style:
+
+| Symbol | Meaning |
+|--------|---------|
+| `→` | Step/progress |
+| `✔` | Success |
+| `!` | Warning |
+| `✖` | Error |
+| `⚙` | Tool execution |
+| `◆` | Channel message received |
 
 
 ## Quick Start

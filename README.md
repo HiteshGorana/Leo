@@ -89,9 +89,13 @@ cargo run -- agent -m "Write a haiku about Rust"
 ```
 
 **4. Gateway**
-Start the Telegram gateway (requires configuration):
+Start the Telegram gateway (interactive setup on first run):
 ```bash
 cargo run -- gateway
+```
+The gateway shows a clean single-line log for each message:
+```
+◆ telegram → Leo → ⚙ tool_name → telegram ✔
 ```
 
 ## Documentation
