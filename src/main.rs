@@ -60,6 +60,27 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
+        
+    // Setup Global Ctrl+C handler
+    let exit_flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let r = exit_flag.clone();
+    
+    ctrlc::set_handler(move || {
+        if r.load(std::sync::atomic::Ordering::SeqCst) {
+            println!("\n👋 Bye!");
+            std::process::exit(0);
+        } else {
+            println!("\n⚠️  Press Ctrl+C again to exit");
+            r.store(true, std::sync::atomic::Ordering::SeqCst);
+            
+            // Reset flag after 3 seconds
+            let r2 = r.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_secs(3));
+                r2.store(false, std::sync::atomic::Ordering::SeqCst);
+            });
+        }
+    }).ok();
     
     let cli = Cli::parse();
     
