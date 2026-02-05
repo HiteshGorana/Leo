@@ -88,20 +88,32 @@ impl<C: LlmClient + Clone> TelegramChannel<C> {
     }
 
     fn is_allowed(&self, user: Option<&teloxide::types::User>) -> bool {
+        // If allow list is empty, allow all (for personal bots / dev mode)
         if self.config.telegram.allow_from.is_empty() {
-            return true; // If allow list is empty, allow all (or maybe default deny? generic safety says deny)
-            // But for a personal bot, usually we want to restrict.
-            // Let's assume if list is empty, it's open (dev mode), or stricter:
-            // return false; 
+            info!("Telegram allow_from is empty - allowing all users");
+            return true;
         }
         
-        let Some(user) = user else { return false };
+        let Some(user) = user else { 
+            info!("No user info in message - rejecting");
+            return false; 
+        };
+        
         let username = user.username.as_deref().unwrap_or("");
         let id = user.id.to_string();
         
-        self.config.telegram.allow_from.iter().any(|allowed| {
-            allowed == username || allowed == &id
-        })
+        let allowed = self.config.telegram.allow_from.iter().any(|allowed| {
+            allowed == username || allowed == &id || allowed.eq_ignore_ascii_case(username)
+        });
+        
+        if allowed {
+            info!("User {} (id: {}) is authorized", username, id);
+        } else {
+            info!("User {} (id: {}) NOT in allow_from list: {:?}", username, id, self.config.telegram.allow_from);
+            info!("TIP: Add your Telegram username or ID to allow_from in ~/.leo/config.json");
+        }
+        
+        allowed
     }
 }
 

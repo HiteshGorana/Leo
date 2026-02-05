@@ -226,10 +226,8 @@ pub fn setup_telegram_gateway(config: &mut Config) -> Result<()> {
     config.telegram.enabled = true;
     config.telegram.token = token;
     
-    let user = whoami::username();
-    config.telegram.allow_from = vec![user.clone()];
-    
-    ui::print_step(&format!("Auto-whitelisted local user: {}", user.cyan()));
+    // Keep allow_from empty - allows all users (suitable for personal bots)
+    // Users can manually add Telegram usernames/IDs to config.json if needed
     
     Ok(())
 }
