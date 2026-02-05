@@ -60,9 +60,10 @@ futures-util = "0.3.31"
 
 # UI and Interactivity
 colored = "2.0"
-inquire = "0.6"
+inquire = "0.7"
 indicatif = "0.17"
-terminal_size = "0.2"
+terminal_size = "0.3"
+whoami = "1.5"
 
 [dev-dependencies]
 tokio-test = "0.4"

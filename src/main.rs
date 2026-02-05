@@ -115,7 +115,7 @@ async fn main() -> Result<()> {
             if let Some(msg) = message {
                 // Single message mode
                 let response = run_agent_once(&config, &msg, &session).await?;
-                println!("\n  {} {}", "🐈".green(), response);
+                println!("\n  {} {}", "🦁".green(), response);
             } else {
                 // Interactive mode
                 leo::ui::print_leo_header(&config.model, &config.provider);
@@ -306,7 +306,7 @@ async fn run_gateway(_port: u16) -> Result<()> {
     use leo::agent::GeminiOAuthClient;
     use leo::adapters::{Channel, telegram::TelegramChannel};
 
-    println!("🐈 Loading configuration...");
+    println!("∴ Loading configuration...");
     let config = leo::config::load()?;
     
     if !config.telegram.enabled {
@@ -319,7 +319,7 @@ async fn run_gateway(_port: u16) -> Result<()> {
     // GeminiClient and GeminiOAuthClient need to derive Clone or be wrapped in Arc in their impls.
     // Let's assume we can clone them for now (reqwest::Client is cheap to clone).
     
-    println!("🐈 Initializing agent with provider: {}", config.provider);
+    println!("∴ Initializing agent with provider: {}", config.provider);
     
     // Initialize Context once to keep Browser Bridge alive
     println!("🦁 Initializing tools...");
