@@ -119,7 +119,7 @@ Always be helpful, accurate, and concise. When using tools, explain what you're 
     }
     
     fn load_bootstrap_files(&self) -> Result<String> {
-        let bootstrap_files = ["AGENTS.md", "SOUL.md", "USER.md"];
+        let bootstrap_files = ["AGENTS.md", "SOUL.md", "USER.md", "IDENTITY.md", "TOOLS.md"];
         let mut parts = Vec::new();
         
         for filename in bootstrap_files {
