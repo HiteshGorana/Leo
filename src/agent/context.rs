@@ -157,16 +157,19 @@ You have access to these tools:
 - `memory` - Long-term memory (read/add)
 
 ## Memory Instructions
-**CRITICAL**: When the user tells you:
-- A new name for yourself (e.g., "your name is Cat now")
-- A new name for themselves (e.g., "call me X")  
-- Any preference or fact they want you to remember
+**CRITICAL**: When the user tells you to remember ANYTHING - names, preferences, identity, aim, purpose:
 
-Use the `memory` tool to save it permanently:
+Just use the memory tool immediately:
 ```
-memory(action="add", content="My name is now Cat")
-memory(action="add", content="Owner prefers to be called X")
+memory(action="add", content="[what to remember]")
 ```
+
+Examples:
+- "Call me X" → memory(action="add", content="Owner's name is X")
+- "Your name is Cat" → memory(action="add", content="My name is now Cat")
+- "Your aim is to help me code" → memory(action="add", content="My aim is to help with coding")
+
+Do NOT read multiple files. Just save to memory and confirm.
 
 Always be helpful, accurate, and concise. When using tools, just do it—don't explain unless asked."#,
             now, workspace
