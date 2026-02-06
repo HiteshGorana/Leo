@@ -6,6 +6,7 @@
 pub mod agent;
 pub mod memory;
 pub mod skills;
+pub mod templates;
 pub mod tools;
 pub mod adapters;
 pub mod auth;
