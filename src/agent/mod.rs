@@ -1,20 +1,25 @@
-//! Agent module - core agent logic
+//! Agent module — core agent logic.
 //!
 //! This module contains:
 //! - Message types (InboundMessage, Response)
 //! - LLM client trait and implementations
 //! - Agent loop for processing messages
 //! - Context builder for prompts
+//!
+//! # Adding a New LLM Provider
+//!
+//! See [`llm::ProviderRegistry`] for instructions.
 
-mod message;
-mod llm;
 mod context;
 mod loop_impl;
-pub mod gemini;
-pub mod gemini_oauth;
+mod message;
+pub mod tokens;
 
-pub use message::{Message, Role, Response, ToolCall, ToolCallRequest, InboundMessage};
-pub use llm::{LlmClient, LlmResponse};
+// LLM providers in submodule
+pub mod llm;
+
+// Re-exports for convenience
 pub use context::Context;
+pub use llm::{GeminiClient, GeminiOAuthClient, LlmClient, LlmResponse, ProviderRegistry, Usage};
 pub use loop_impl::AgentLoop;
-pub use gemini_oauth::GeminiOAuthClient;
+pub use message::{InboundMessage, Message, Response, Role, ToolCall, ToolCallRequest};

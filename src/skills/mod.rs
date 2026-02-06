@@ -1,6 +1,6 @@
 //! Skills module - extend agent capabilities
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +30,7 @@ pub struct SkillRegistry {
 
 impl SkillRegistry {
     /// Create a new skill registry and load skills from workspace
-    pub fn new(workspace: &PathBuf) -> Self {
+    pub fn new(workspace: &Path) -> Self {
         let mut registry = Self {
             skills: HashMap::new(),
         };
@@ -44,7 +44,7 @@ impl SkillRegistry {
     }
     
     /// Load skills from a directory
-    fn load_from_directory(&mut self, path: &PathBuf) {
+    fn load_from_directory(&mut self, path: &Path) {
         if !path.exists() {
             return;
         }
@@ -62,7 +62,7 @@ impl SkillRegistry {
     }
     
     /// Load a single skill from its directory
-    fn load_skill(&mut self, path: &PathBuf) {
+    fn load_skill(&mut self, path: &Path) {
         let skill_md = path.join("SKILL.md");
         if !skill_md.exists() {
             return;
@@ -120,7 +120,7 @@ impl SkillRegistry {
 }
 
 /// Parse skill from SKILL.md content
-fn parse_skill(content: &str, path: &PathBuf) -> Option<Skill> {
+fn parse_skill(content: &str, path: &Path) -> Option<Skill> {
     // Check for YAML frontmatter
     if !content.starts_with("---") {
         return None;
@@ -163,7 +163,7 @@ fn parse_skill(content: &str, path: &PathBuf) -> Option<Skill> {
         description: description.unwrap_or_default(),
         requires,
         content: body.trim().to_string(),
-        path: path.clone(),
+        path: path.to_path_buf(),
     })
 }
 

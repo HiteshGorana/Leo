@@ -1,7 +1,7 @@
 //! Tool runner - manages and executes tools
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::Path;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use crate::Result;
@@ -39,7 +39,7 @@ impl ToolRunner {
     }
     
     /// Create a tool runner with default tools
-    pub fn new_with_defaults(workspace: &PathBuf) -> Self {
+    pub fn new_with_defaults(workspace: &Path) -> Self {
         let mut runner = Self::new();
         
         // File tools
@@ -47,16 +47,16 @@ impl ToolRunner {
         runner.register(WriteFileTool);
         runner.register(ListDirTool);
         runner.register(EditTool);
-        runner.register(SearchTool::new(workspace.clone()));
-        runner.register(FindFilesTool::new(workspace.clone()));
+        runner.register(SearchTool::new(workspace.to_path_buf()));
+        runner.register(FindFilesTool::new(workspace.to_path_buf()));
         
         // Shell & Git tools
-        runner.register(ExecTool::new(workspace.clone()));
-        runner.register(GitTool::new(workspace.clone()));
+        runner.register(ExecTool::new(workspace.to_path_buf()));
+        runner.register(GitTool::new(workspace.to_path_buf()));
         
         // Memory & Task tools
-        runner.register(MemoryTool::new(workspace.clone()));
-        runner.register(TaskTool::new(workspace.clone()));
+        runner.register(MemoryTool::new(workspace.to_path_buf()));
+        runner.register(TaskTool::new(workspace.to_path_buf()));
         
         // Create Browser Bridge (Extension) instance first to share it
         let browser = super::browser_bridge::BrowserBridgeTool::new();

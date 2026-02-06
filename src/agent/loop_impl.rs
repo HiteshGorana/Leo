@@ -1,11 +1,14 @@
 //! Agent loop - core message processing
 
 use tracing::{debug, info};
+
 use crate::Result;
 use crate::error::Error;
+
+use super::context::Context;
 use super::llm::LlmClient;
 use super::message::{Message, Response, ToolCallRequest};
-use super::context::Context;
+use super::tokens::{estimate_tokens, TokenUsage};
 
 /// The agent loop processes messages through LLM and tool execution
 pub struct AgentLoop<C: LlmClient> {
@@ -37,7 +40,21 @@ impl<C: LlmClient> AgentLoop<C> {
             
             // Call LLM
             let response = self.client.chat(&messages, &tools).await?;
-            
+
+            // Log token usage (first iteration only)
+            if iteration == 0 {
+                let sys_tokens = messages.first().map(|m| estimate_tokens(&m.content)).unwrap_or(0);
+                let tools_tokens = tools.iter().map(|t| estimate_tokens(&t.description)).sum();
+                let hist_tokens: usize = messages.iter().skip(1).take(messages.len().saturating_sub(2))
+                    .map(|m| estimate_tokens(&m.content)).sum();
+                let msg_tokens = messages.last().map(|m| estimate_tokens(&m.content)).unwrap_or(0);
+                
+                let usage = TokenUsage::new(sys_tokens, tools_tokens, hist_tokens, msg_tokens)
+                    .with_completion(response.usage.total_tokens);
+                usage.log();
+                debug!("Token summary: {}", usage.summary());
+            }
+
             // Check if done
             if !response.has_tool_calls() {
                 let content = response.content.unwrap_or_default();
