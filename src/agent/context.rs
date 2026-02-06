@@ -174,7 +174,7 @@ Always be helpful, accurate, and concise. When using tools, just do it—don't e
     }
 
     /// Load bootstrap files from workspace (static helper for caching).
-    fn load_bootstrap_files_static(workspace: &PathBuf) -> String {
+    fn load_bootstrap_files_static(workspace: &std::path::Path) -> String {
         const BOOTSTRAP_FILES: [&str; 6] = [
             "AGENTS.md",
             "SOUL.md",

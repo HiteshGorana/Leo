@@ -73,7 +73,7 @@ impl TokenBudget {
 pub fn estimate_tokens(text: &str) -> usize {
     // Simple heuristic: ~4 chars per token
     // More accurate would use tiktoken, but this is fast and good enough
-    (text.len() + CHARS_PER_TOKEN - 1) / CHARS_PER_TOKEN
+    text.len().div_ceil(CHARS_PER_TOKEN)
 }
 
 /// Token usage statistics for a request.
@@ -156,10 +156,10 @@ pub fn truncate_to_budget(text: &str, max_tokens: usize) -> &str {
 
 /// Truncate history messages to fit within a token budget.
 /// Returns a slice of the most recent messages that fit.
-pub fn truncate_history<'a, T: AsRef<str>>(
-    messages: &'a [T],
+pub fn truncate_history<T: AsRef<str>>(
+    messages: &[T],
     max_tokens: usize,
-) -> &'a [T] {
+) -> &[T] {
     let mut total = 0;
     let mut start_idx = messages.len();
 
