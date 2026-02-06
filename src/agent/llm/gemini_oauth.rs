@@ -220,29 +220,31 @@ impl GeminiOAuthClient {
     }
 
     fn convert_messages(&self, messages: &[Message]) -> Vec<Value> {
-        messages
-            .iter()
-            .filter(|m| m.role != Role::System)
-            .map(|m| {
-                let role = match m.role {
-                    Role::User => "user",
-                    Role::Assistant => "model",
-                    Role::Tool => "function",
-                    Role::System => "user", // Should be filtered
-                };
-
-                if m.role == Role::Tool {
-                    json!({
-                        "role": "function",
-                        "parts": [{
-                            "functionResponse": {
-                                "name": m.tool_call_id.as_deref().unwrap_or("unknown"),
-                                "response": {"result": m.content}
-                            }
-                        }]
-                    })
-                } else if let Some(ref tool_calls) = m.tool_calls {
-                    let calls: Vec<Value> = tool_calls
+        let mut result: Vec<Value> = Vec::new();
+        let mut tool_responses: Vec<Value> = Vec::new();
+        
+        for m in messages.iter().filter(|m| m.role != Role::System) {
+            // If we have accumulated tool responses and hit a non-tool message, flush them
+            if m.role != Role::Tool && !tool_responses.is_empty() {
+                result.push(json!({
+                    "role": "function",
+                    "parts": tool_responses.clone()
+                }));
+                tool_responses.clear();
+            }
+            
+            match m.role {
+                Role::Tool => {
+                    // Accumulate tool responses into a single message
+                    tool_responses.push(json!({
+                        "functionResponse": {
+                            "name": m.tool_call_id.as_deref().unwrap_or("unknown"),
+                            "response": {"result": m.content}
+                        }
+                    }));
+                },
+                Role::Assistant if m.tool_calls.is_some() => {
+                    let calls: Vec<Value> = m.tool_calls.as_ref().unwrap()
                         .iter()
                         .map(|tc| {
                             json!({
@@ -253,19 +255,34 @@ impl GeminiOAuthClient {
                             })
                         })
                         .collect();
-
-                    json!({
-                        "role": role,
+                    result.push(json!({
+                        "role": "model",
                         "parts": calls
-                    })
-                } else {
-                    json!({
+                    }));
+                },
+                _ => {
+                    let role = match m.role {
+                        Role::User => "user",
+                        Role::Assistant => "model",
+                        _ => "user",
+                    };
+                    result.push(json!({
                         "role": role,
                         "parts": [{"text": m.content}]
-                    })
+                    }));
                 }
-            })
-            .collect()
+            }
+        }
+        
+        // Flush any remaining tool responses
+        if !tool_responses.is_empty() {
+            result.push(json!({
+                "role": "function",
+                "parts": tool_responses
+            }));
+        }
+        
+        result
     }
 
     fn get_system_instruction(&self, messages: &[Message]) -> Option<String> {

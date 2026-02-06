@@ -4,16 +4,16 @@
 //! This ensures they're always available and versioned with the codebase.
 
 /// Agent instructions - loaded every session
-pub const AGENTS: &str = include_str!("../../templates/AGENTS.md");
+pub const AGENTS: &str = include_str!("../templates/AGENTS.md");
 
 /// Leo's identity and personality
-pub const SOUL: &str = include_str!("../../templates/SOUL.md");
+pub const SOUL: &str = include_str!("../templates/SOUL.md");
 
 /// User information template
-pub const USER: &str = include_str!("../../templates/USER.md");
+pub const USER: &str = include_str!("../templates/USER.md");
 
 /// Long-term memory template
-pub const MEMORY: &str = include_str!("../../templates/MEMORY.md");
+pub const MEMORY: &str = include_str!("../templates/MEMORY.md");
 
 /// All template file names and their content
 pub const TEMPLATES: &[(&str, &str)] = &[
