@@ -9,7 +9,7 @@ use tokio_tungstenite::accept_async;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use futures_util::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
-use tracing::{info, error};
+use tracing::{info, warn, debug};
 
 /// A tool that acts as a bridge to a Chrome Extension via WebSocket
 #[derive(Clone)]
@@ -51,11 +51,15 @@ impl BrowserBridgeTool {
                     Err(e) => {
                         if e.kind() == std::io::ErrorKind::AddrInUse && retry_count < max_retries {
                             retry_count += 1;
-                            error!("Browser Bridge Port {} in use, retrying in 2s ({})...", addr, retry_count);
+                            // Only log first attempt, then stay quiet
+                            if retry_count == 1 {
+                                debug!("Browser Bridge port {} in use, waiting...", addr);
+                            }
                             tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                             continue;
                         }
-                        error!("Failed to bind Browser Bridge after {} retries: {}", retry_count, e);
+                        // After retries exhausted, just note it's not available
+                        warn!("Browser Bridge unavailable (port {} in use) - browser tool disabled", addr);
                         return;
                     }
                 }
@@ -68,7 +72,7 @@ impl BrowserBridgeTool {
                 
                 tokio::spawn(async move {
                     if let Err(e) = handle_connection(stream, sender_store, content_store).await {
-                        error!("Error processing connection: {}", e);
+                        debug!("Browser connection ended: {}", e);
                     }
                 });
             }
@@ -146,7 +150,7 @@ async fn handle_connection(
                         break;
                     }
                     Some(Err(e)) => {
-                        error!("WebSocket error: {}", e);
+                        debug!("WebSocket error: {}", e);
                         break;
                     }
                     None => break,

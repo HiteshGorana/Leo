@@ -2,7 +2,7 @@
 
 use crate::Result;
 use crate::error::Error;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use chrono::Local;
 
 /// Memory store trait - interface for persistent memory
@@ -29,9 +29,9 @@ pub struct FileMemoryStore {
 }
 
 impl FileMemoryStore {
-    pub fn new(workspace: &PathBuf) -> Self {
+    pub fn new(workspace: &Path) -> Self {
         Self {
-            workspace: workspace.clone(),
+            workspace: workspace.to_path_buf(),
         }
     }
     
@@ -91,7 +91,7 @@ impl MemoryStore for FileMemoryStore {
             String::new()
         };
         
-        current.push_str("\n");
+        current.push('\n');
         current.push_str(content);
         std::fs::write(&path, current)?;
         
@@ -121,7 +121,7 @@ impl MemoryStore for FileMemoryStore {
             format!("# Notes for {}\n\n", Local::now().format("%Y-%m-%d"))
         };
         
-        current.push_str("\n");
+        current.push('\n');
         current.push_str(content);
         std::fs::write(&path, current)?;
         
@@ -172,7 +172,7 @@ impl MemoryStore for InMemoryStore {
     
     fn append_long_term(&self, content: &str) -> Result<()> {
         let mut lt = self.long_term.lock().unwrap();
-        lt.push_str("\n");
+        lt.push('\n');
         lt.push_str(content);
         Ok(())
     }
@@ -183,7 +183,7 @@ impl MemoryStore for InMemoryStore {
     
     fn append_today(&self, content: &str) -> Result<()> {
         let mut t = self.today.lock().unwrap();
-        t.push_str("\n");
+        t.push('\n');
         t.push_str(content);
         Ok(())
     }

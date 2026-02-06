@@ -176,7 +176,7 @@ async fn main() -> Result<()> {
 
 async fn run_agent_once(config: &leo::config::Config, message: &str, _session: &str) -> Result<String> {
     use leo::agent::{AgentLoop, Message, Context};
-    use leo::agent::gemini::GeminiClient;
+    use leo::agent::GeminiClient;
     use leo::agent::GeminiOAuthClient;
     
     let mut ctx = Context::new(config)?;
@@ -204,7 +204,7 @@ async fn run_agent_once(config: &leo::config::Config, message: &str, _session: &
 async fn run_agent_interactive(config: &leo::config::Config, _session: &str) -> Result<()> {
     use std::io::{self, Write};
     use leo::agent::{AgentLoop, Message, Context};
-    use leo::agent::gemini::GeminiClient;
+    use leo::agent::GeminiClient;
     use leo::agent::GeminiOAuthClient;
     use leo::ui;
     
@@ -313,7 +313,7 @@ async fn run_login(dry_run: bool) -> Result<()> {
 
 async fn run_gateway(_port: u16) -> Result<()> {
     use leo::agent::AgentLoop;
-    use leo::agent::gemini::GeminiClient;
+    use leo::agent::GeminiClient;
     use leo::agent::GeminiOAuthClient;
     use leo::adapters::{Channel, telegram::TelegramChannel};
 
